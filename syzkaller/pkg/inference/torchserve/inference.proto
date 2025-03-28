@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+// To generate the golang code
+// run: protoc --proto_path=. --proto_path=$(go list -f '{{ .Dir }}' -m github.com/googleapis/googleapis) 
+// --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. pkg/inference/proto/inference.proto
+package org.pytorch.serve.grpc.inference;
+
+import "google/protobuf/empty.proto";
+import "google/rpc/status.proto";
+
+option go_package="./pkg/inference/proto/";
+option java_multiple_files = true;
+
+message PredictionsRequest {
+    // Name of model.
+    string model_name = 1; //required
+
+    // Version of model to run prediction on.
+    string model_version = 2; //optional
+
+    // Input data for model prediction
+    map<string, bytes> input = 3; //required
+
+    // SequenceId is required for StreamPredictions2 API.
+    optional string sequence_id = 4; //optional
+}
+
+message PredictionResponse {
+    // Response content for prediction
+    bytes prediction = 1;
+
+    // SequenceId is required for StreamPredictions2 API.
+    optional string sequence_id = 2; //optional
+
+    // Error information for StreamPredictions2 API.
+    optional google.rpc.Status status = 3; //optional
+}
+
+message TorchServeHealthResponse {
+    // TorchServe health
+    string health = 1;
+}
+
+service InferenceAPIsService {
+    // Check health status of the TorchServe server.
+    rpc Ping(google.protobuf.Empty) returns (TorchServeHealthResponse) {}
+
+    // Predictions entry point to get inference using default model version.
+    rpc Predictions(PredictionsRequest) returns (PredictionResponse) {}
+
+    // Streaming response for an inference request.
+    rpc StreamPredictions(PredictionsRequest) returns (stream PredictionResponse) {}
+
+    // Bi-direction streaming inference and response.
+    rpc StreamPredictions2(stream PredictionsRequest) returns (stream PredictionResponse) {}
+}

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <style>
+    {{ .Style }}
+  </style>
+</head>
+<body>
+  {{ .Body }}
+</body>
+{{ .JS }}
+</html>
+
+{{ define "js" }}
+<script>
+  var togglers = document.getElementsByClassName("caret");
+  for (var i = 0; i < togglers.length; i++) {
+    togglers[i].addEventListener("click", function() {
+      this.classList.toggle("caret-down");
+      this.parentElement.parentElement.parentElement.querySelector(".nested").classList.toggle("active");
+    });
+  }
+</script>
+{{ end }}
+
+{{ define "style" }}
+  ul {
+    list-style-type: none;
+    padding-left: 0px;
+  }
+  .first_column {
+    display: inline-block;
+    width: 250px;
+  }
+  .date_column {
+    display: inline-block;
+    width: 50px;
+  }
+  .instrumented_column {
+    display: inline-block;
+    width: 70px;
+    text-align: right;
+  }
+  .tree_depth_0 {width: 0px;}
+  .tree_depth_1 {width: 20px;}
+  .tree_depth_2 {width: 40px;}
+  .tree_depth_3 {width: 60px;}
+  .tree_depth_4 {width: 80px;}
+  .tree_depth_5 {width: 100px;}
+  .tree_depth_6 {width: 120px;}
+  .tree_depth_7 {width: 140px;}
+
+  .bold {font-weight: bold;}
+  .caret {
+    cursor: pointer;
+    user-select: none;
+  }
+  .caret::before {
+    color: black;
+    content: "\25B6";
+    display: inline-block;
+    margin-right: 3px;
+  }
+  .caret-down::before {
+    transform: rotate(90deg);
+  }
+  .nested {
+    display: none;
+  }
+  .active {
+    display: block;
+  }
+  .data_row {
+    width: fit-content;
+  }
+  ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  ul > li > ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li > ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  ul > li > ul > li > ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li > ul > li > ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  ul > li > ul > li > ul > li > ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li > ul > li > ul > li > ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  ul > li > ul > li > ul > li > ul > li > ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li > ul > li > ul > li > ul > li > ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  ul > li > ul > li > ul > li > ul > li > ul > li > ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li > ul > li > ul > li > ul > li > ul > li > ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  ul > li > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li:nth-of-type(even) .data_row {background: #F4F4F4;}
+  ul > li > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li:nth-of-type(odd) .data_row {background: #FFF;}
+  .data_row:hover {
+    background-color: #ffff99 !important;
+  }
+{{ end }}
+
+{{ define "body" }}
+  <div>
+    <ul id="collapsible-list">
+      <li>
+        <div class="first_column bold">
+          date
+        </div>
+        {{ range $date := .Dates }}
+        <div class="date_column bold">
+          {{ $date }}
+        </div>
+        {{ end }}
+      </li>
+      <li>
+        <div class="first_column bold">
+          total covered
+        </div>
+        {{ range $cov := .Root.Coverage }}
+        <div class="date_column">
+          {{ $cov }}%
+        </div>
+        {{ end }}
+        <div class="instrumented_column">
+          of {{ approxInstr .Root.LastDayInstrumented }} blocks
+        </div>
+      </li>
+      <br>
+      {{template "dir" .Root}}
+    </ul>
+  </div>
+{{ end }}
+
+{{define "dir"}}
+  {{range $child := .Items}}
+    <li>
+      <div class="data_row">
+        <div class="first_column" style="display: inline-block">
+          <div class="tree_depth_{{ $child.Depth }}" style="display: inline-block">
+          </div>
+          <div class="{{ if $child.IsDir }}caret{{ end }}"
+               style="display: inline-block">
+            {{$child.Name}}
+          </div>
+        </div>
+        {{ range $cov := $child.Coverage }}
+          <div class="date_column">
+            {{ $cov }}%
+          </div>
+        {{ end }}
+        <div class="instrumented_column">
+          {{ approxInstr $child.LastDayInstrumented }}
+        </div>
+      </div>
+      {{ if $child.IsDir }}
+        <ul class="nested">
+          {{template "dir" $child}}
+        </ul>
+      {{ end }}
+    </li>
+  {{end}}
+{{end}}
